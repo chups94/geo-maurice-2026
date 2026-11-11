@@ -1,0 +1,133 @@
+/* ---------- Bouton flottant « Signaler » ---------- */
+.report-fab {
+    position: absolute;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    z-index: 1100;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 999px;
+    background: #e74c3c;
+    color: #fff;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+.report-fab:hover { filter: brightness(1.08); }
+
+/* ---------- Panneau de saisie ---------- */
+.report-sheet {
+    box-sizing: border-box;
+    position: absolute;
+    top: 20px;
+    right: 56px;
+    z-index: 1200;
+    width: min(380px, calc(100% - 40px));
+    max-height: calc(100% - 40px);
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    padding: 16px 18px 18px;
+    font-size: 14px;
+    color: #2c3e50;
+}
+.report-sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.report-sheet-head h2 { margin: 0; font-size: 18px; }
+.report-sheet fieldset { border: none; border-top: 1px solid #eee; margin: 0; padding: 12px 0; display: grid; gap: 8px; }
+.report-sheet legend { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #7f8c8d; padding-right: 8px; }
+.report-sheet label { font-size: 13px; color: #555; }
+.report-sheet select,
+.report-sheet textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    font-size: 16px; /* évite le zoom automatique sur iOS */
+    padding: 10px;
+    border: 1px solid #d5dbe0;
+    border-radius: 8px;
+    background: #fff;
+}
+.report-sheet textarea { resize: vertical; min-height: 80px; }
+.report-sheet .hint { font-size: 12.5px; color: #7f8c8d; margin: 0; line-height: 1.4; }
+.report-sheet .hint.ok { color: #27ae60; }
+.report-sheet .counter { text-align: right; }
+.report-sheet .note { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; line-height: 1.45; color: #555; background: #f6f8fa; border-radius: 8px; padding: 8px 10px; margin: 8px 0 0; }
+.report-sheet .note svg { flex: none; margin-top: 2px; }
+.form-error { color: #c0392b; font-size: 13px; min-height: 1.2em; margin: 8px 0; }
+
+.icon-btn { background: none; border: none; cursor: pointer; padding: 6px; color: #7f8c8d; border-radius: 6px; }
+.icon-btn:hover { background: #f0f2f4; color: #2c3e50; }
+.btn-outline {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 14px; border: 1px solid #3498db; border-radius: 8px; background: #fff;
+    color: #2471a3; font: inherit; font-weight: 600; cursor: pointer;
+}
+.btn-outline:hover { background: #eef6fc; }
+.file-btn { cursor: pointer; }
+.link-btn { background: none; border: none; padding: 0; color: #2471a3; text-decoration: underline; cursor: pointer; font: inherit; font-size: 13px; justify-self: start; }
+.btn-submit {
+    width: 100%; padding: 14px; border: none; border-radius: 10px; background: #e74c3c; color: #fff;
+    font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.btn-submit:disabled { opacity: 0.6; cursor: wait; }
+.photo-preview { display: grid; gap: 6px; }
+.photo-preview img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; }
+
+/* ---------- Carte : repère et bulles ---------- */
+.leaflet-container.picking,
+.leaflet-container.picking .leaflet-interactive { cursor: crosshair !important; }
+/* Pendant la saisie, les districts et les points de services (qui ouvrent une bulle
+   et arrêtent le clic) laissent passer le clic jusqu'à la carte. Le repère du
+   signalement, dans le panneau des marqueurs, reste déplaçable. */
+.leaflet-container.picking .leaflet-overlay-pane path.leaflet-interactive { pointer-events: none !important; }
+.report-pin span {
+    display: block; width: 30px; height: 30px; background: #e74c3c; border: 3px solid #fff;
+    border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    box-sizing: border-box;
+}
+.report-popup { display: grid; gap: 4px; }
+.report-popup em { color: #7f8c8d; font-size: 12px; }
+.report-popup p { margin: 4px 0 !important; line-height: 1.4; }
+.report-popup img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 6px; }
+
+/* ---------- Message de confirmation ---------- */
+.toast {
+    position: absolute; left: 50%; top: 20px; transform: translateX(-50%); z-index: 1300;
+    max-width: min(440px, calc(100% - 32px)); padding: 12px 16px; border-radius: 10px;
+    background: #27ae60; color: #fff; font-weight: 600; text-align: center; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ---------- Onglet Signalements ---------- */
+.reports-panel { padding-top: 12px; display: grid; gap: 10px; align-content: start; }
+.reports-panel .hint { font-size: 12.5px; color: #7f8c8d; margin: 0; line-height: 1.45; }
+.reports-panel h4 { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #7f8c8d; }
+.reports-toggle { display: flex; gap: 8px; align-items: center; font-weight: 600; cursor: pointer; }
+.reports-count { margin: 0; font-size: 13px; color: #2c3e50; }
+.reports-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; color: #555; }
+.reports-panel .dot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+.reports-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.reports-list button {
+    width: 100%; display: flex; align-items: center; gap: 4px; text-align: left; background: rgba(255, 255, 255, 0.7);
+    border: 1px solid #eee; border-radius: 8px; padding: 8px 10px; cursor: pointer; font: inherit; color: inherit;
+}
+.reports-list button:hover { background: #fff; }
+.reports-list .txt { display: grid; flex: 1; min-width: 0; font-size: 13px; }
+.reports-list .txt span { color: #7f8c8d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reports-list time { font-size: 12px; color: #7f8c8d; flex: none; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 768px) {
+    .report-sheet {
+        position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: 100%;
+        max-height: 62vh; border-radius: 16px 16px 0 0; padding-bottom: calc(18px + env(safe-area-inset-bottom));
+    }
+    /* À gauche, pour ne pas recouvrir la légende (à droite) */
+    .report-fab { left: 16px; transform: none; bottom: calc(76px + env(safe-area-inset-bottom)); padding: 12px 20px; }
+}

@@ -1,0 +1,514 @@
+import React, { useState, useEffect } from 'react';
+import './ControlPanel.css';
+import { Settings, RefreshCw, Eye, EyeOff, BarChart2, Layers, Save, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { ReportsPanel } from '../Reports/ReportsPanel';
+import { useLanguage } from '../../i18n/LanguageContext';
+import { LanguageSelector } from './LanguageSelector';
+
+export function ControlPanel({
+    groups,
+    config,
+    setConfig,
+    onRecalculate,
+    loading,
+    progress,
+    // New props for profiles
+    profiles = [],
+    activeProfileId,
+    onLoadProfile,
+    onSaveProfile,
+    onOpenSaveModal,
+    onDeleteProfile,
+    viewMode,
+    setViewMode,
+    heatmapSettings,
+    setHeatmapSettings,
+    // Advanced Settings
+    sliderLimits,
+    setSliderLimits,
+    setShowAdvancedModal,
+    applicationMode,
+    setApplicationMode,
+    floodLevel,
+    setFloodLevel,
+    riskMode,
+    setRiskMode,
+    populationWeighting,
+    setPopulationWeighting,
+    // Signalements citoyens
+    reports = [],
+    showReports,
+    setShowReports,
+    onFocusReport
+}) {
+    const { t } = useLanguage();
+
+    // DEBUG: console log to inspect props
+    if (!groups) {
+        console.error("ControlPanel: groups prop is missing!", { groups, config });
+    }
+
+    // Toggle state for internal UI sections
+    // Ensure groups is an object before using Object.keys
+    const initialExpanded = groups ? Object.keys(groups).reduce((acc, k) => ({ ...acc, [k]: true }), {}) : {};
+    const [expandedCats, setExpandedCats] = useState(initialExpanded);
+    const [showSettings, setShowSettings] = useState(false);
+    // Mobile : le panneau est replié en bas de l'écran par défaut
+    const [mobileOpen, setMobileOpen] = useState(false);
+    useEffect(() => {
+        document.body.classList.toggle('panel-open', mobileOpen);
+    }, [mobileOpen]);
+
+    const toggleCat = (cat) => setExpandedCats(prev => ({ ...prev, [cat]: !prev[cat] }));
+
+    const updateConfig = (label, field, val) => {
+        setConfig(prev => ({
+            ...prev,
+            [label]: {
+                ...prev[label],
+                [field]: val
+            }
+        }));
+    };
+
+    const toggleCategoryAll = (cat, field) => {
+        const labels = groups[cat];
+        const allTrue = labels.every(l => config[l]?.[field]);
+        const newVal = !allTrue;
+
+        setConfig(prev => {
+            const next = { ...prev };
+            labels.forEach(l => {
+                if (!next[l]) next[l] = { visible: true, score: true, weight: 1 };
+                next[l] = { ...next[l], [field]: newVal };
+            });
+            return next;
+        });
+    };
+
+    const handleSaveClick = () => {
+        if (onOpenSaveModal) {
+            onOpenSaveModal();
+        }
+    };
+
+    const toggleAllVisibility = () => {
+        const allLabels = Object.values(groups).flat();
+        const allVisible = allLabels.every(l => config[l]?.visible);
+        const newVal = !allVisible;
+
+        setConfig(prev => {
+            const next = { ...prev };
+            allLabels.forEach(l => {
+                if (!next[l]) next[l] = { visible: true, score: true, weight: 1 };
+                next[l] = { ...next[l], visible: newVal };
+            });
+            return next;
+        });
+    };
+
+    return (
+        <div className={`control-panel ${mobileOpen ? 'mobile-open' : ''}`}>
+            <div className="panel-header">
+                <h2>{t('appTitle')}</h2>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <button
+                        className="mobile-toggle"
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        aria-label={mobileOpen ? t('close') : t('calcSettings')}
+                        aria-expanded={mobileOpen}
+                    >
+                        {mobileOpen ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                    </button>
+                    <LanguageSelector />
+                    <button
+                        onClick={toggleAllVisibility}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                        title={t('toggleVisibility')}
+                    >
+                        <Eye size={18} color="#555" />
+                    </button>
+                    <button
+                        onClick={() => setShowSettings(!showSettings)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                        title={t('calcSettings')}
+                    >
+                        <Settings size={18} color={showSettings ? "#3498db" : "#666"} />
+                    </button>
+                </div>
+            </div>
+
+            {/* Settings Modal / Popover */}
+            {showSettings && (
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid #eee', background: '#f0f8ff' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: 8, color: '#0056b3' }}>{t('settings')}</div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 12, minWidth: 60 }}>{t('function')}:</span>
+                            <select
+                                value={heatmapSettings?.type || 'linear'}
+                                onChange={(e) => setHeatmapSettings(prev => ({ ...prev, type: e.target.value }))}
+                                style={{ flex: 1, padding: 4, borderRadius: 4, border: '1px solid #ccc' }}
+                            >
+                                <option value="linear">{t('linear')}</option>
+                                <option value="constant">{t('constant')}</option>
+                                <option value="exponential">{t('exponential')}</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    {/* Advanced Settings Button */}
+                    <div style={{ marginTop: 8, borderTop: '1px solid #ddd', paddingTop: 8 }}>
+                        <button
+                            onClick={() => setShowAdvancedModal(true)}
+                            style={{ width: '100%', padding: '6px', cursor: 'pointer', background: '#e0efff', border: '1px solid #3498db', borderRadius: 4, color: '#0056b3', fontSize: 11, fontWeight: 'bold' }}
+                        >
+                            {t('openAdvanced')}
+                        </button>
+                    </div>
+
+                    <div style={{ marginTop: 8, borderTop: '1px solid #ddd', paddingTop: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 'bold', color: '#555', marginBottom: 4 }}>{t('hybridMode')}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 12, minWidth: 60 }}>{t('opacity')}:</span>
+                            <input
+                                type="range"
+                                min={sliderLimits?.opacity?.min || 0.2}
+                                max={sliderLimits?.opacity?.max || 3.0}
+                                step={sliderLimits?.opacity?.step || 0.1}
+                                value={heatmapSettings.params.densityInfluence || 1.0}
+                                onChange={(e) => setHeatmapSettings(prev => ({ ...prev, params: { ...prev.params, densityInfluence: parseFloat(e.target.value) } }))}
+                                style={{ flex: 1 }}
+                                title={`Influence de la densité: ${heatmapSettings.params.densityInfluence || 1.0}`}
+                            />
+                            <span style={{ fontSize: 10 }}>{heatmapSettings.params.densityInfluence || 1.0}x</span>
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: 8, borderTop: '1px solid #ddd', paddingTop: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 'bold', color: '#555', marginBottom: 4 }}>{t('roadEstimation')}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 12, minWidth: 60 }}>{t('tortuosity')}:</span>
+                            <input
+                                type="range"
+                                min={sliderLimits?.tortuosity?.min || 1.0}
+                                max={sliderLimits?.tortuosity?.max || 20.0}
+                                step={sliderLimits?.tortuosity?.step || 0.1}
+                                value={heatmapSettings.params.roadFactor || 1.0}
+                                onChange={(e) => setHeatmapSettings(prev => ({ ...prev, params: { ...prev.params, roadFactor: parseFloat(e.target.value) } }))}
+                                style={{ flex: 1 }}
+                                title={`Facteur distance: ${heatmapSettings.params.roadFactor || 1.0}x`}
+                            />
+                            <span style={{ fontSize: 10 }}>{heatmapSettings.params.roadFactor || 1.0}x</span>
+                        </div>
+                        <div style={{ fontSize: 9, color: '#888', fontStyle: 'italic', marginTop: 2 }}>
+                            {t('birdFlight')}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Profile Section */}
+            <div className="profile-section" style={{ padding: '10px 16px', borderBottom: '1px solid #eee' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <select
+                        value={activeProfileId}
+                        onChange={(e) => onLoadProfile(e.target.value)}
+                        style={{ flex: 1, padding: '4px', borderRadius: 4, border: '1px solid #ccc' }}
+                    >
+                        {profiles.map(p => (
+                            <option key={p.id} value={p.id}>
+                                {p.name} {p.isCustom ? '(Custom)' : ''}
+                            </option>
+                        ))}
+                        {activeProfileId === 'custom_unsaved' && <option value="custom_unsaved" disabled>{t('modified')}</option>}
+                    </select>
+
+                    <button
+                        onClick={handleSaveClick}
+                        title={t('saveProfileTitle')}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                    >
+                        <Save size={16} color="#333" />
+                    </button>
+
+                    {profiles.find(p => p.id === activeProfileId)?.isCustom && (
+                        <button
+                            onClick={() => {
+                                if (confirm(t('deleteConfirm'))) onDeleteProfile(activeProfileId);
+                            }}
+                            title={t('deleteProfileTitle')}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                        >
+                            <Trash2 size={16} color="#e41a1c" />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Mode Switcher Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid #ddd' }}>
+                <button
+                    onClick={() => setApplicationMode('services')}
+                    style={{
+                        flex: 1, padding: '10px', cursor: 'pointer',
+                        background: applicationMode === 'services' ? 'white' : '#f8f9fa',
+                        border: 'none',
+                        borderBottom: applicationMode === 'services' ? '2px solid #3498db' : 'none',
+                        fontWeight: applicationMode === 'services' ? 'bold' : 'normal',
+                        color: applicationMode === 'services' ? '#2c3e50' : '#7f8c8d'
+                    }}
+                >
+                    {t('services')}
+                </button>
+                <button
+                    onClick={() => setApplicationMode('risks')}
+                    style={{
+                        flex: 1, padding: '10px', cursor: 'pointer',
+                        background: applicationMode === 'risks' ? 'white' : '#f8f9fa',
+                        border: 'none',
+                        borderBottom: applicationMode === 'risks' ? '2px solid #e74c3c' : 'none',
+                        fontWeight: applicationMode === 'risks' ? 'bold' : 'normal',
+                        color: applicationMode === 'risks' ? '#c0392b' : '#7f8c8d'
+                    }}
+                >
+                    {t('risks')}
+                </button>
+                <button
+                    onClick={() => setApplicationMode('reports')}
+                    style={{
+                        flex: 1, padding: '10px', cursor: 'pointer',
+                        background: applicationMode === 'reports' ? 'white' : '#f8f9fa',
+                        border: 'none',
+                        borderBottom: applicationMode === 'reports' ? '2px solid #e67e22' : 'none',
+                        fontWeight: applicationMode === 'reports' ? 'bold' : 'normal',
+                        color: applicationMode === 'reports' ? '#d35400' : '#7f8c8d'
+                    }}
+                >
+                    {t('reportsTab')}{reports.length > 0 ? ` (${reports.length})` : ''}
+                </button>
+            </div>
+
+            {applicationMode === 'reports' ? (
+                <ReportsPanel reports={reports} visible={showReports} setVisible={setShowReports} onFocus={(id) => { setMobileOpen(false); onFocusReport(id); }} />
+            ) : applicationMode === 'services' ? (
+                <>
+                    {/* View Mode Switcher */}
+                    <div style={{ padding: '10px 16px', borderBottom: '1px solid #eee', background: '#fff' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: 8, color: '#555' }}>{t('displayMode')}</div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                                onClick={() => setViewMode('accessibility')}
+                                style={{
+                                    flex: 1, padding: '6px', cursor: 'pointer',
+                                    borderRadius: 4, border: '1px solid #ccc',
+                                    background: viewMode === 'accessibility' ? '#3498db' : '#f8f9fa',
+                                    color: viewMode === 'accessibility' ? 'white' : '#333',
+                                    fontWeight: viewMode === 'accessibility' ? 'bold' : 'normal'
+                                }}
+                            >
+                                {t('accessibility')}
+                            </button>
+                            <button
+                                onClick={() => setViewMode('population')}
+                                style={{
+                                    flex: 1, padding: '6px', cursor: 'pointer',
+                                    borderRadius: 4, border: '1px solid #ccc',
+                                    background: viewMode === 'population' ? '#e67e22' : '#f8f9fa',
+                                    color: viewMode === 'population' ? 'white' : '#333',
+                                    fontWeight: viewMode === 'population' ? 'bold' : 'normal'
+                                }}
+                            >
+                                {t('population')}
+                            </button>
+                            <button
+                                onClick={() => setViewMode('hybrid')}
+                                style={{
+                                    flex: 1, padding: '6px', cursor: 'pointer',
+                                    borderRadius: 4, border: '1px solid #ccc',
+                                    background: viewMode === 'hybrid' ? '#8e44ad' : '#f8f9fa',
+                                    color: viewMode === 'hybrid' ? 'white' : '#333',
+                                    fontWeight: viewMode === 'hybrid' ? 'bold' : 'normal'
+                                }}
+                            >
+                                {t('combination')}
+                            </button>
+                        </div>
+                    </div>
+
+                    {
+                        loading && (
+                            <div style={{ padding: '10px 16px', background: '#f9f9f9', borderBottom: '1px solid #eee' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
+                                    <span>{t('loading')}</span>
+                                    <span>{Math.round(progress)}%</span>
+                                </div>
+                                <div style={{ width: '100%', height: 4, background: '#eee', borderRadius: 2 }}>
+                                    <div style={{ width: `${progress}%`, height: '100%', background: '#4ada4a', borderRadius: 2, transition: 'width 0.2s' }}></div>
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    <div className="panel-content">
+                        {Object.keys(groups).map(cat => (
+                            <div key={cat} className="category-block">
+                                <div className="category-header">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => toggleCat(cat)}>
+                                        <span className="category-title">{t(`cat_${cat}`) || cat}</span>
+                                    </div>
+                                    <div className="control-group">
+                                        <button title="Toggle Visibility" onClick={() => toggleCategoryAll(cat, 'visible')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <Eye size={14} />
+                                        </button>
+                                        <button title="Toggle Score" onClick={() => toggleCategoryAll(cat, 'score')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <BarChart2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {expandedCats[cat] && groups[cat].map(label => {
+                                    const c = config[label] || { visible: true, score: true, weight: 1 };
+                                    return (
+                                        <div key={label} className="amenity-row">
+                                            <div className="amenity-header">
+                                                <span className="amenity-name">{label.replace(/_/g, ' ')}</span>
+                                                <div className="amenity-controls">
+                                                    <label className="control-group" title="Afficher sur la carte">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={c.visible}
+                                                            onChange={e => updateConfig(label, 'visible', e.target.checked)}
+                                                        />
+                                                        <Eye size={14} />
+                                                    </label>
+                                                    <label className="control-group" title="Inclure dans le score">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={c.score}
+                                                            onChange={e => updateConfig(label, 'score', e.target.checked)}
+                                                        />
+                                                        <BarChart2 size={14} />
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            {c.score && (
+                                                <div className="weight-slider-container">
+                                                    <span style={{ fontSize: 10, minWidth: 60 }}>{t('range')}: {c.weight} km</span>
+                                                    <input
+                                                        type="range"
+                                                        className="weight-slider"
+                                                        min={sliderLimits?.range?.min || 0}
+                                                        max={sliderLimits?.range?.max || 100}
+                                                        step={sliderLimits?.range?.step || 1}
+                                                        value={c.weight}
+                                                        onChange={e => updateConfig(label, 'weight', parseFloat(e.target.value))}
+                                                        title={`${t('range')}: ${c.weight} km`}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                </>
+            ) : (
+                // RISK MODE PANEL
+                <div style={{ padding: 20 }}>
+                    <h3 style={{ marginTop: 0, color: '#e74c3c' }}>{t('riskMaps')}</h3>
+                    <p style={{ fontSize: 13, color: '#666' }}>
+                        {t('riskMapsDesc')}
+                    </p>
+
+                    <div style={{ marginTop: 20, background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                            <strong style={{ color: '#2c3e50' }}>{t('riskType')}</strong>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                            <button
+                                onClick={() => setRiskMode('river')}
+                                style={{
+                                    flex: 1, padding: '8px', cursor: 'pointer', borderRadius: 4,
+                                    border: riskMode === 'river' ? '1px solid #3498db' : '1px solid #eee',
+                                    background: riskMode === 'river' ? '#eaf4fc' : '#fff',
+                                    color: riskMode === 'river' ? '#2980b9' : '#555',
+                                    fontWeight: riskMode === 'river' ? 'bold' : 'normal',
+                                    fontSize: 12
+                                }}
+                            >
+                                {t('riverFlood')}
+                            </button>
+                            <button
+                                onClick={() => setRiskMode('sea')}
+                                style={{
+                                    flex: 1, padding: '8px', cursor: 'pointer', borderRadius: 4,
+                                    border: riskMode === 'sea' ? '1px solid #27ae60' : '1px solid #eee',
+                                    background: riskMode === 'sea' ? '#e9f7ef' : '#fff',
+                                    color: riskMode === 'sea' ? '#27ae60' : '#555',
+                                    fontWeight: riskMode === 'sea' ? 'bold' : 'normal',
+                                    fontSize: 12
+                                }}
+                            >
+                                {t('seaRise')}
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <strong style={{ color: '#2c3e50' }}>{t('floodLevel')}: {riskMode === 'river' ? t('flood') : t('sea')} (+{floodLevel}m)</strong>
+                        </div>
+
+                        <input
+                            type="range"
+                            min={0}
+                            max={riskMode === 'river' ? 20 : 800}
+                            step={riskMode === 'river' ? 0.2 : 5}
+                            value={floodLevel}
+                            onChange={(e) => setFloodLevel(parseFloat(e.target.value))}
+                            style={{ width: '100%', cursor: 'pointer', accentColor: riskMode === 'sea' ? '#27ae60' : '#3498db' }}
+                        />
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: '#888' }}>
+                            <span>0m</span>
+                            <span>{riskMode === 'river' ? t('extremeFlood') : t('summit')}</span>
+                        </div>
+
+                        <p style={{ fontSize: 11, color: '#666', marginTop: 8, lineHeight: 1.4 }}>
+                            {riskMode === 'river' ? t('riverFloodDesc') : t('seaRiseDesc')}
+                        </p>
+                    </div>
+
+                    <div style={{ marginTop: 10, background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={populationWeighting}
+                                onChange={(e) => setPopulationWeighting(e.target.checked)}
+                            />
+                            <div>
+                                <strong style={{ display: 'block', color: '#e74c3c' }}>{t('humanImpact')}</strong>
+                                <span style={{ fontSize: 11, color: '#888' }}>
+                                    {t('humanImpactDesc')}
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+
+                </div>
+            )}
+
+            {applicationMode === 'services' && (
+                <div className="action-bar">
+                    <button className="btn-primary" onClick={onRecalculate} disabled={loading}>
+                        {loading ? t('calculating') : t('recalculate')}
+                    </button>
+                </div>
+            )}
+        </div >
+    );
+}

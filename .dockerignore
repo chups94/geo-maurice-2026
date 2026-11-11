@@ -1,0 +1,12 @@
+**/node_modules
+geo-maurice-app/dist
+server/data
+server/tiles/*.pmtiles
+server/tiles/*.part
+server/test
+.venv
+**/.env
+.git
+*.zip
+pmtiles
+pmtiles.exe

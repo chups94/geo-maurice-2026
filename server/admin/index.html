@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>GéoMaurice — Modération</title>
+    <link rel="icon" type="image/svg+xml" href="/map.svg">
+    <link rel="stylesheet" href="/admin/admin.css">
+</head>
+
+<body>
+    <main class="admin">
+        <header class="admin-header">
+            <div>
+                <h1>Modération des signalements</h1>
+                <p class="muted">GéoMaurice · CEDTI</p>
+            </div>
+            <nav>
+                <a href="/">← Carte</a>
+                <button id="logout" class="btn ghost hidden" type="button">Se déconnecter</button>
+            </nav>
+        </header>
+
+        <form id="login-form" class="card login">
+            <label for="password">Mot de passe admin</label>
+            <input id="password" type="password" autocomplete="current-password" required>
+            <p id="login-error" class="error" role="alert"></p>
+            <button class="btn primary" type="submit">Se connecter</button>
+        </form>
+
+        <section id="dashboard" class="hidden">
+            <div class="stats" id="stats"></div>
+
+            <div class="tabs" role="tablist">
+                <button class="tab active" data-status="pending" role="tab" type="button">À valider <span
+                        id="count-pending" class="badge">0</span></button>
+                <button class="tab" data-status="published" role="tab" type="button">Publiés <span
+                        id="count-published" class="badge">0</span></button>
+                <button id="refresh" class="btn ghost small" type="button">↻ Actualiser</button>
+            </div>
+
+            <p id="tab-hint" class="muted"></p>
+            <div id="list" class="list"></div>
+            <p id="empty" class="muted empty hidden"></p>
+        </section>
+    </main>
+    <script type="module" src="/admin/admin.js"></script>
+</body>
+
+</html>

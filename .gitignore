@@ -1,0 +1,23 @@
+data/*
+cache/*
+.venv/*
+*.geojson
+*.log
+*.tmp
+*.csv
+**.tif
+sources/
+!geo-maurice-app/public/data/**/*.geojson
+!geo-maurice-app/public/data/**/*.json
+
+!data/WB_THINK_HAZARD.csv
+
+# Application et serveur
+node_modules/
+geo-maurice-app/dist/
+server/data/
+server/tiles/*.pmtiles
+server/tiles/*.part
+.env
+pmtiles
+pmtiles.exe
